@@ -2,8 +2,8 @@
 import math
 import xlrd
 import jieba
-from gensim.test.utils import common_texts, get_tmpfile
-from gensim import corpora, models, similarities
+import gensim
+import bp
 
 #求Word Vector平均值
 def avg(vec):
@@ -42,22 +42,46 @@ def index(sentence, q):
 #输入数据
 data = xlrd.open_workbook('data.xls')
 sheet = data.sheet_by_index(0)
+clist = []
 qlist = [] 
 alist = []
-for i in range(1, sheet.nrows):
+n = sheet.nrows
+for i in range(1, n):
+    clist.append(sheet.cell(i,0).value)
     qlist.append(jieba.lcut(sheet.cell(i,1).value))
     alist.append(sheet.cell(i,2).value)
+cdict = {}
+id = 0
+for i in clist:
+    if i not in cdict:
+        cdict[i] = id
+        id += 1
+n_class = len(cdict)
 
 #训练Word2Vector模型
-w2v_model = models.Word2Vec(qlist, size = 100, window = 5, min_count = 1, workers = 4)
+w2v_model = gensim.models.Word2Vec(qlist, size = 100, window = 5, min_count = 1, workers = 4)
 word_vector = w2v_model.wv
 
 #SIF加权的Word Vector平均得出Sentence Vector
 sentence_vector = [avg(word_vector[x]) for x in qlist]
 
-#查找最相似问题
+#构造数据集
+train_data = []
+for i in range(0, n - 1):
+    train_data.append((sentence_vector[i], cdict[clist[i]]))
+
+#训练bp神经网络分类器
+classifier = bp.bp([100, 200, 200, n_class])
+classifier.train_SGD(train_data, 10, 100, 1.0)
+
+#问题分类
 question = input("please input the question: ")
 query = jieba.lcut(question)
 query = avg(word_vector[query])
+class_idx = classifier.calculate(query)
+print(class_idx)
+
+#查找最相似问题
+
 idx = index(sentence_vector, query)
 print('anwser:\n   ', alist[idx].split("答：")[1])
