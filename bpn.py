@@ -30,8 +30,8 @@ class bp:
     def bp(self, x, y):
         nabla_b = [np.zeros(b.shape) for b in self.biases]
         nabla_w = [np.zeros(w.shape) for w in self.weights]
-        activation = x
-        activations = [x]
+        activation = np.array([[i,] for i in x])
+        activations = [activation,]
         zs = []
         for b, w in zip(self.biases, self.weights):
             z = np.dot(w, activation) + b
@@ -40,14 +40,13 @@ class bp:
             activations.append(activation)
         delta = self.cost_derivative(activations[-1], y) * self.sigmoid_prime(zs[-1])
         nabla_b[-1] = delta
-        print(delta)
-        nabla_w[-1] = np.dot(delta, np.array(activations[-2]).transpose())
+        nabla_w[-1] = np.dot(delta, activations[-2].transpose())
         for l in range(2, self.n_layer):
             z = zs[-l]
             sp = self.sigmoid_prime(z)
             delta = np.dot(self.weights[-l + 1].transpose(), delta) * sp
             nabla_b[-l] = delta
-            nabla_w[-l] = np.dot(delta, np.array(activations[-l - 1]).transpose())
+            nabla_w[-l] = np.dot(delta, activations[-l - 1].transpose())
         return (nabla_b, nabla_w)
 
     def update(self, batch, eta):

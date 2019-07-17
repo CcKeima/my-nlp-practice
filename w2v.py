@@ -3,7 +3,7 @@ import math
 import xlrd
 import jieba
 import gensim
-import bp
+import bpn
 
 #求Word Vector平均值
 def avg(vec):
@@ -71,7 +71,7 @@ for i in range(0, n - 1):
     train_data.append((sentence_vector[i], cdict[clist[i]]))
 
 #训练bp神经网络分类器
-classifier = bp.bp([100, 200, 200, n_class])
+classifier = bpn.bp([100, 200, 200, n_class])
 classifier.train_SGD(train_data, 10, 100, 1.0)
 
 #问题分类
