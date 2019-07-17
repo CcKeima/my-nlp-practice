@@ -16,12 +16,15 @@ class bp:
         return x * (1 - x)
     
     def cost_derivative(self, x, y):
-        return y - x 
+        tmp = np.zeros(x.shape)
+        tmp[y][0] = 1
+        return tmp - x
 
     def calculate(self, x):
+        x = np.array([[i,] for i in x])
         for b, w in zip(self.biases, self.weights):
             x = self.sigmoid(np.dot(w, x) + b)
-        return x
+        return np.argmax(x)
 
     def evaluate(self, test_data):
         test_result = [(np.argmax(self.calculate(x)), y) for x, y in test_data]
@@ -30,11 +33,13 @@ class bp:
     def bp(self, x, y):
         nabla_b = [np.zeros(b.shape) for b in self.biases]
         nabla_w = [np.zeros(w.shape) for w in self.weights]
+        #activation = np.array([[self.sigmoid(i),] for i in x])
         activation = np.array([[i,] for i in x])
         activations = [activation,]
         zs = []
         for b, w in zip(self.biases, self.weights):
             z = np.dot(w, activation) + b
+            #z = self.sigmoid(z)
             zs.append(z)
             activation = self.sigmoid(z)
             activations.append(activation)
@@ -56,9 +61,12 @@ class bp:
             delta_nable_b, delta_nable_w = self.bp(x, y)
             nabla_b = [nb + dnb for nb, dnb in zip(nabla_b, delta_nable_b)]
             nabla_w = [nw + dnw for nw, dnw in zip(nabla_w, delta_nable_w)]
-            self.biases = [b - (eta / (len(batch))) * nb for b, nb in zip(self.biases, nabla_b)]
-            self.weights = [w - (eta / (len(batch))) * nw for w, nw in zip(self.weights, nabla_w)]
-            
+            self.biases = [b - (eta / (len(batch)) * nb) for b, nb in zip(self.biases, nabla_b)]
+            self.weights = [w - (eta / (len(batch)) * nw) for w, nw in zip(self.weights, nabla_w)]
+        #self.biases = [self.sigmoid(b - (eta / (len(batch))) * nb) for b, nb in zip(self.biases, nabla_b)]
+        #self.weights = [self.sigmoid(w - (eta / (len(batch))) * nw) for w, nw in zip(self.weights, nabla_w)]
+        #print(self.weights)
+
     def train_SGD(self, train_data, epochs, batch_size, eta, test_data = None):
         n = len(train_data)
         if test_data:
